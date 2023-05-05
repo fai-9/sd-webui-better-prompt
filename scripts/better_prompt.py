@@ -105,20 +105,20 @@ localization_dict: Dict[str, str] = {}
 def get_git_command() -> None:
   global git
   try:
-    subprocess.run([git, "-v"], cwd = EXTENSION_ROOT, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, check = True)
+    subprocess.run([git, "-v"], cwd = EXTENSION_ROOT, shell = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE, check = True)
   except subprocess.CalledProcessError:
     git = GIT
-    subprocess.run([git, "-v"], cwd = EXTENSION_ROOT, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, check = True)
+    subprocess.run([git, "-v"], cwd = EXTENSION_ROOT, shell = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE, check = True)
 
 def print_version() -> None:
-  result = subprocess.check_output([git, "log", '--pretty=v%(describe:tags)', "-n", "1"], cwd = EXTENSION_ROOT, shell = True).decode("utf-8")
+  result = subprocess.check_output([git, "log", '--pretty=v%(describe:tags)', "-n", "1"], cwd = EXTENSION_ROOT, shell = False).decode("utf-8")
   print(f"Better Prompt version is {result.strip()}")
 
 def refresh_available_version() -> None:
-  versions = subprocess.check_output([git, "tag"], cwd = EXTENSION_ROOT, shell = True).decode("utf-8").splitlines()
+  versions = subprocess.check_output([git, "tag"], cwd = EXTENSION_ROOT, shell = False).decode("utf-8").splitlines()
 
   regex = r'(?<=\-\>)\s*(\d+\.\d+\.\d+)'
-  fetch_result = subprocess.run([git, "fetch", "--dry-run", "--tags"], cwd = EXTENSION_ROOT, shell = True, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+  fetch_result = subprocess.run([git, "fetch", "--dry-run", "--tags"], cwd = EXTENSION_ROOT, shell = False, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   for line in fetch_result.stdout.decode("utf-8").splitlines():
     match = re.search(regex, line)
     if match:
@@ -128,13 +128,13 @@ def refresh_available_version() -> None:
   available_versions = [" "] + sorted(versions, key = lambda v: tuple(map(int, v.split("."))), reverse = True)
 
 def change_version() -> None:
-  before = subprocess.check_output([git, "log", '--pretty=v%(describe:tags)', "-n", "1"], cwd = EXTENSION_ROOT, shell = True).decode("utf-8")
-  subprocess.run([git, "fetch", "-q"], cwd = EXTENSION_ROOT, shell = True)
+  before = subprocess.check_output([git, "log", '--pretty=v%(describe:tags)', "-n", "1"], cwd = EXTENSION_ROOT, shell = False).decode("utf-8")
+  subprocess.run([git, "fetch", "-q"], cwd = EXTENSION_ROOT, shell = False)
   if shared.opts.better_prompt_version and (not shared.opts.better_prompt_version.isspace()):
-    subprocess.run([git, "reset", "--hard", "-q", shared.opts.better_prompt_version], cwd = EXTENSION_ROOT, shell = True)
+    subprocess.run([git, "reset", "--hard", "-q", shared.opts.better_prompt_version], cwd = EXTENSION_ROOT, shell = False)
   else:
-    subprocess.run([git, "reset", "--hard", "-q", "origin"], cwd = EXTENSION_ROOT, shell = True)
-  after = subprocess.check_output([git, "log", '--pretty=v%(describe:tags)', "-n", "1"], cwd = EXTENSION_ROOT, shell = True).decode("utf-8")
+    subprocess.run([git, "reset", "--hard", "-q", "origin"], cwd = EXTENSION_ROOT, shell = False)
+  after = subprocess.check_output([git, "log", '--pretty=v%(describe:tags)', "-n", "1"], cwd = EXTENSION_ROOT, shell = False).decode("utf-8")
   print(f"Better Prompt version changed: {before.strip()} -> {after.strip()}")
 
 def find_newer_version(target_version: str) -> str:
@@ -203,7 +203,7 @@ def filter_none_fields(obj: Any) -> Any:
 def on_app_started(demo: Optional[gr.Blocks], app: FastAPI) -> None:
   @app.get("/better-prompt-api/v1/check-for-updates")
   async def check_for_updates(request: Request):
-    version = subprocess.check_output([git, "log", '--pretty=%(describe:tags)', "-n", "1"], cwd = EXTENSION_ROOT, shell = True).decode("utf-8")
+    version = subprocess.check_output([git, "log", '--pretty=%(describe:tags)', "-n", "1"], cwd = EXTENSION_ROOT, shell = False).decode("utf-8")
     version = version.strip().split("-")[0]
     return JSONResponse(content = do_check_for_updates(version))
 
